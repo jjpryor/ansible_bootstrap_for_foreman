@@ -1,4 +1,4 @@
-# bootstrap_for_foreman
+# ansible_bootstrap_for_foreman
 Ansible playbooks for installing Foreman 1.9 on RHEL7.x on target nodes,
 a Fedora 22 for desktop machine to run ansible, and Ansible 1.9+.
 
