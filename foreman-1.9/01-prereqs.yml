@@ -1,0 +1,41 @@
+---
+- hosts: foreman-node
+  sudo: yes
+  tasks:
+  - name: upgrade all packages
+    yum: name=* state=latest
+  - name: Add wgetrc to /etc/
+    copy: src=../files/wgetrc dest=/etc/wgetrc owner=root group=root mode=0644
+  - name: Add proxy.sh to /etc/profile.d
+    copy: src=../files/proxy.sh dest=/etc/profile.d/proxy.sh owner=root group=root mode=0755
+  - name: install iptables-services
+    yum: name=iptables-services state=latest
+  - name: disable and stop firewalld
+    service: name=firewalld enabled=no state=stopped
+  - name: enable and start iptables
+    service: name=iptables enabled=yes state=started
+  - name: Copy new iptables which opens ports for PE Console
+    copy: src=../files/iptables dest=/etc/sysconfig/iptables owner=root group=root mode=0600
+  - name: restart iptables
+    service: name=iptables enabled=yes state=restarted
+  - name: Collect /var free space on target system
+    action: shell df -P /var | awk 'END { print $4 }'
+    register: varsize
+    changed_when: no
+  - name: Safeguard - Check if /var is at least 8G to continue
+    action: fail msg="Not enough free space on filesystem /var (got {{varsize.stdout|int/1024/1024|int}}G, need at least 8G)"
+    when: varsize.stdout|int < 8 * 1024 * 1024
+  - name: Collect /opt free space on target system
+    action: shell df -P /opt | awk 'END { print $4 }'
+    register: optsize
+    changed_when: no
+  - name: Safeguard - Check if /opt is at least 2G to continue
+    action: fail msg="Not enough free space on filesystem /opt (got {{optsize.stdout|int/1024/1024|int}}G, need at least 2G)"
+    when: optsize.stdout|int < 2 * 1024 * 1024
+  - name: Collect /tmp free space on target system
+    action: shell df -P /tmp | awk 'END { print $4 }'
+    register: tmpsize
+    changed_when: no
+  - name: Safeguard - Check if /tmp is at least 4G to continue
+    action: fail msg="Not enough free space on filesystem /tmp (got {{optsize.stdout|int/1024/1024|int}}G, need at least 4G)"
+    when: tmpsize.stdout|int < 4 * 1024 * 1024

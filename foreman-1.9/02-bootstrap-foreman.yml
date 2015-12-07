@@ -1,0 +1,36 @@
+---
+- hosts: foreman-node
+  environment:
+    ftp_proxy: http://proxy.itdept.yourorg.local:3128
+    http_proxy: http://proxy.itdept.yourorg.local:3128
+    https_proxy: http://proxy.itdept.yourorg.local:3128
+    no_proxy: yourorg.local,localhost,127.0.0.1
+  vars_prompt:
+  - name: "rhn_username"
+    prompt: "Enter RHN username"
+    private: no
+  - name: "rhn_password"
+    prompt: "Enter RHN password"
+    private: yes
+  sudo: yes
+  tasks:
+  - name: Enable the RHEL Optional and RHSCL repos
+    shell: /usr/sbin/rhn-channel -u {{rhn_username}} -p {{rhn_password}} --add -c rhel-x86_64-server-7-rhscl-1
+  - name: Download Puppet Labs YUM Repo 'Release' RPM from Puppet Labs to /root
+    get_url: use_proxy=yes dest=/root/puppetlabs-release-el-7.noarch.rpm url=http://yum.puppetlabs.com/puppetlabs-release-el-7.noarch.rpm
+  - name: Install Puppet Labs YUM Repo 'Release' RPM
+    yum: name=/root/puppetlabs-release-el-7.noarch.rpm  state=present
+  - name: Download EPEL YUM Repo 'Release' RPM from local mirror to /root
+    get_url: use_proxy=no dest=/root/epel-release-latest-7.noarch.rpm url=http://ftp.linux.yourorg.local/pub/epel/epel-release-latest-7.noarch.rpm
+  - name: Install EPEL YUM Repo 'Release' RPM
+    yum: name=/root/epel-release-latest-7.noarch.rpm state=present
+  - name: Copy new epel.repo which points YUM to the local mirror for EPEL
+    copy: src=../files/epel.repo dest=/etc/yum.repos.d/epel.repo owner=root group=root mode=0644
+  - name: Download Foreman 1.9 YUM Repo 'Release' RPM from yum.theforeman.org to /root
+    get_url: dest=/root/foreman-release.rpm url=http://yum.theforeman.org/releases/1.9/el7/x86_64/foreman-release.rpm
+  - name: Install EPEL YUM Repo 'Release' RPM
+    yum: name=/root/foreman-release.rpm  state=present
+  - name: Flush cached YUM metadata && get fresh metadata
+    shell: /usr/bin/yum clean expire-cache && /usr/bin/yum repolist
+  - name: Install foreman-installer
+    yum: name=foreman-installer state=latest

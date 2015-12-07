@@ -1,0 +1,20 @@
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [1:88]
+-A INPUT  -m state --state RELATED,ESTABLISHED -j ACCEPT
+-A INPUT -p icmp  -j ACCEPT
+-A INPUT -i lo  -j ACCEPT
+-A INPUT -d 127.0.0.0/8 ! -i lo  -j REJECT --reject-with icmp-port-unreachable
+-A INPUT -p tcp -m multiport --dports 22  -j ACCEPT
+# 443 is for Foreman web GUI
+-A INPUT -p tcp -m multiport --ports 443 -m comment --comment "443 is for Foreman web GUI" -j ACCEPT
+# 80 is for web download of kickstart
+-A INPUT -p tcp -m multiport --ports 80 -m comment --comment "80 is for web download of kickstart" -j ACCEPT
+# 8140 is for Puppet Master
+-A INPUT -p tcp -m multiport --ports 8140 -m comment --comment "8140 is for Puppet Master" -j ACCEPT
+# 69 UDP is for TFTP
+-A INPUT -p udp --dport 69 -m comment --comment "69 UDP is for TFTP" -j ACCEPT
+-A INPUT -m limit --limit 30/min -j LOG --log-prefix "IPTables-dropped: "
+-A INPUT  -j DROP
+COMMIT
