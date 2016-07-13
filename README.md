@@ -117,7 +117,7 @@ At this point in time it will not run the installer for you.
 
 ---
 
-## Contents of split-node-pe directory
+## Contents of foreman-1.9
 ### ansible.cfg
 I'm pointing ansible to use my SSH private key and I'm using my `jjpryortemp` remote account that must be manually setup on each of the three nodes.
 
